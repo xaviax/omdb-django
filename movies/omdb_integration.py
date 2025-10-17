@@ -15,7 +15,7 @@ def get_or_create_genres(genre_names):
     yield genre
 
 
-  def fill_movie_details(movie):
+def fill_movie_details(movie):
 
     """
     Fetch a movie's full details from OMDb. Then, save it to the DB. If the movie already has a `full_record` this does
@@ -30,16 +30,21 @@ def get_or_create_genres(genre_names):
 
     omdb_client = get_client_from_settings()
     movie_details= omdb_client.get_by_imdb_id(movie.imdb_id)
+
+    data=movie_details._data
+    print("Movie data: ", movie_details._data)  # optional debug
+
     movie.title = movie_details.title
-    movie.year=movie_details.year
-    movie.plot=movie_details.plot
-    movie.runtime=movie_details.runtime_minutes
-    movie.genres=clear()
+    movie.year = movie_details.year
+    movie.plot = movie_details.plot
+    movie.runtime = movie_details.runtime_minutes
+
+    movie.genres.clear()
 
     for genre in get_or_create_genres(movie_details.genres):
       movie.genres.add(genre)
 
-    move.is_full_record=True
+    movie.is_full_record=True
     movie.save()
 
 
@@ -71,7 +76,8 @@ def search_and_save(search):
   omdb_client=get_client_from_settings()
 
   for omdb_movie in omdb_client.search(search):
-    logger.info("Saving movie: '%s' / '%s' ", omdb_movie.title,omdb_movie.id)
+    print("DEBUG omdb_movie contents:", vars(omdb_movie))
+    logger.info("Saving movie: '%s' / '%s' ", omdb_movie.title,omdb_movie.imdb_id)
 
     movie,created = Movie.objects.get_or_create(
       imdb_id=omdb_movie.imdb_id,

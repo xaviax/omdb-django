@@ -15,14 +15,14 @@ class OmdbMovie:
 
   def __init__(self,data):
     """ data is raw json returned from omdb  """
-    self.data=data
+    self._data=data
 
   def check_for_detail_data_key(self,key):
     """Some keys are only in detailed response,
        raise an exception if the key is not found.
     """
 
-    if key not in self.data:
+    if key not in self._data:
       raise AttributeError(
         f"{key} is not in data, please make sure this is a detail response."
       )
@@ -30,21 +30,21 @@ class OmdbMovie:
 
   @property
   def imdb_id(self):
-    return self.data["imdbID"]
+    return self._data["imdbID"]
 
   @property
   def title(self):
-    return self.data["Title"]
+    return self._data["Title"]
 
   @property
   def year(self):
-    return int(self.data["Year"])    
+    return int(self._data["Year"])    
 
   @property
   def runtime_minutes(self):
     self.check_for_detail_data_key("Runtime")
 
-    rt,units = self.data['Runtime'].split(" ")
+    rt,units = self._data['Runtime'].split(" ")
 
     if units !="min":
       raise ValueError(f"Expected units 'min' for runtime. Got '{units}' ")  
@@ -56,12 +56,12 @@ class OmdbMovie:
   def genres(self):
     self.check_for_detail_data_key("Genre")
 
-    return self.data["Genre"].split(", ")
+    return self._data["Genre"].split(", ")
 
   @property
   def plot(self):
     self.check_for_detail_data_key("Plot")
-    return self.data["Plot"]
+    return self._data["Plot"]
 
   
 
@@ -74,7 +74,7 @@ class OmdbClient:
     """makes a get request to api, 
     automatically adding apikey to parameters """
 
-    params["api_key"] = self.api_key
+    params["apikey"] = self.api_key
 
     resp=requests.get(OMDB_API_URL,params=params)
     resp.raise_for_status()    
@@ -85,7 +85,7 @@ class OmdbClient:
 
     logger.info("Fetching detail for IMDB ID %s", imdb_id)    
     resp=self.make_request({"i":imdb_id})
-    return OmdbMovie(resp.json)
+    return OmdbMovie(resp.json())
 
 
   def search(self,search):
@@ -103,6 +103,10 @@ class OmdbClient:
       logger.info("Fetching page %d", page)
       resp=self.make_request({"s":search,"type":"movie","page":str(page)})
       resp_body = resp.json()
+
+      if resp_body.get("Response") == "False":
+        logger.warning("OMDb search failed: %s", resp_body.get("Error", "Unknown error"))
+        break
 
       if total_results is None:
         total_results= int(resp_body["totalResults"])
