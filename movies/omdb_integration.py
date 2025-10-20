@@ -71,6 +71,7 @@ def search_and_save(search):
       "Search for '%s' was performed in the past 24 hours already, not searcching again..",
       normalized_search_term,
     )
+    #commenting out this return for testing purposes 
     return
 
   omdb_client=get_client_from_settings()
